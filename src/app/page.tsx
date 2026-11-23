@@ -31,6 +31,8 @@ export default async function HomePage() {
   ]);
   // Signed-in users skip the landing page; the inbox restores their last-used mailbox.
   if (sessionUser && !sessionUser.disabled) redirect("/inbox");
+  // Single-account install: no public landing page or sign-up, only the login.
+  if (!sessionUser || sessionUser.disabled) redirect("/login");
 
   // Render the signed-in account from the server response so the header does not
   // wait for hydration and an /api/auth/me round trip before showing it.

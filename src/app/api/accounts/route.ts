@@ -21,7 +21,12 @@ export async function GET(request: Request) {
 	});
 }
 
+const SINGLE_ACCOUNT: boolean = true;
+
 export async function POST(request: Request) {
+	// Single-account install: the owner account is the only account.
+	if (SINGLE_ACCOUNT) return NextResponse.json({ error: "This install allows only one account" }, { status: 403 });
+
 	const access = await requireTeamAdmin(request);
 	if (access.error) return access.error;
 	if (!hasValidSessionMutationOrigin(request)) return NextResponse.json({ error: "Invalid origin" }, { status: 403 });

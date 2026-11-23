@@ -18,7 +18,12 @@ export async function GET(request: Request) {
 	return NextResponse.json({ accounts: rows.map(accountListItemFromUser) });
 }
 
+const SINGLE_ACCOUNT: boolean = true;
+
 export async function POST(request: Request) {
+	// Single-account install: the owner account is the only account.
+	if (SINGLE_ACCOUNT) return NextResponse.json({ error: "This install allows only one account" }, { status: 403 });
+
 	const env = getEnv();
 	const auth = await authenticateAdminApiKey(env, request, "accounts");
 	if (!auth) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
