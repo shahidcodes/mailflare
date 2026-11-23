@@ -94,6 +94,8 @@ export function createNodeRuntime(): NodeRuntime {
 		// them here they never reached the code (INBOUND_REQUIRE_SIGNED_HEADERS=1 stayed off).
 		INBOUND_REQUIRE_SIGNED_HEADERS: optional("INBOUND_REQUIRE_SIGNED_HEADERS"),
 		RESEND_API_KEY: optional("RESEND_API_KEY"),
+		BREVO_API_KEY: optional("BREVO_API_KEY"),
+		BREVO_API_KEYS: optional("BREVO_API_KEYS"),
 		AWS_ACCESS_KEY_ID: optional("AWS_ACCESS_KEY_ID"),
 		AWS_SECRET_ACCESS_KEY: optional("AWS_SECRET_ACCESS_KEY"),
 		AWS_REGION: optional("AWS_REGION"),

@@ -4,6 +4,7 @@ import { appSettings, domains } from "@/db/schema";
 import { requireAwsConfig } from "@/lib/aws/config";
 import { sendSesEmail } from "@/lib/aws/ses";
 import { getEmailAddress } from "@/lib/email/address";
+import { requireBrevoApiKey, sendBrevoEmail } from "@/lib/email/brevo";
 import { fetchSentMessageId, resendClient, resendOmittedHeaders, resendSetsMessageId, type ResendClient } from "@/lib/email/resend-api";
 import type { OutboundProviderConfig, OutboundProviderMessage, ResendKeyStatus } from "@/lib/email/outbound-provider-types";
 
@@ -45,6 +46,7 @@ export async function getOutboundProviderConfig(env: CloudflareEnv, fromAddress:
 	}
 	if (domain.provider === "resend") return { provider: "resend", apiKey: (await getResendClient(env)).apiKey };
 	if (domain.provider === "ses") return { provider: "ses", config: await requireAwsConfig(env) };
+	if (domain.provider === "brevo") return { provider: "brevo", apiKey: requireBrevoApiKey(env, hostname!) };
 	return { provider: "cloudflare" };
 }
 
@@ -119,6 +121,7 @@ export async function sendThroughProvider(
 ): Promise<{ messageId: string }> {
 	if (config.provider === "resend") return sendWithResend(env, resendClient(env, config.apiKey), message, idempotencyKey);
 	if (config.provider === "ses") return sendSesEmail(config.config, message);
+	if (config.provider === "brevo") return sendBrevoEmail(config.apiKey, message);
 	const response = await env.EMAIL.send({
 		from: message.from,
 		to: message.to,

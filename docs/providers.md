@@ -63,6 +63,14 @@ Only the sending statements are needed if you use SES just for sending.
 
 Each message is read from your own bucket, handed to the normal inbound pipeline, and deleted. SES's virus scan is enabled and infected messages are dropped. `APP_URL` has to be a public HTTPS address so SNS can reach the endpoint. The bucket and topic are shared by all SES domains; **Clean up** removes only the domain's rule and MX, so Mailflare never deletes resources another domain may still use.
 
+## Brevo (sending only)
+
+Brevo sends mail through its transactional API (`POST /v3/smtp/email`). Mailflare does not add the domain to Brevo or write its DNS: add and authenticate the domain in Brevo first (its brevo-code TXT, `brevo1`/`brevo2` DKIM CNAMEs and DMARC), then choose **Brevo** under **Send mail with**.
+
+- Set the key as the Worker secret `BREVO_API_KEY`. For domains in different Brevo accounts, also set `BREVO_API_KEYS` to a JSON map such as `{"example.com":"xkeysib-..."}`; a domain not in the map uses `BREVO_API_KEY`.
+- A key restricted to transactional email can send but cannot read domain status, so the card shows the status as unknown.
+- Brevo assigns the `Message-ID`; Mailflare stores the one Brevo returns, so replies thread. Inline images are sent as regular attachments.
+
 ## MX records and switching receiving provider
 
 Only one service can own a domain's MX records. When a provider's Setup finds MX records for something else (including Cloudflare Email Routing's), it stops and shows them, and replaces them only after you confirm. Confirming means the previous service stops receiving mail for that domain.
@@ -95,6 +103,8 @@ You cannot clean up the provider that is currently selected.
 | `RESEND_BASE_URL` | Base URL of the Resend API (default `https://api.resend.com`); point it at a Resend-compatible service to send and receive through that instead |
 | `RESEND_CUSTOM_MESSAGE_ID` | `false` stops sending Mailflare's own `Message-ID` header, for compatible services that refuse it (default: sent) |
 | `RESEND_OMIT_HEADERS` | Comma-separated headers left out of every Resend send, for compatible services that refuse them (default: none) |
+| `BREVO_API_KEY` | Brevo API key for domains that send with Brevo |
+| `BREVO_API_KEYS` | Optional JSON map of hostname to Brevo key, for domains in other Brevo accounts |
 | `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_REGION` | SES credentials used when none are saved in the app |
 | `APP_URL` | Public HTTPS address; required for Resend and SES receiving, because the providers call this app |
 

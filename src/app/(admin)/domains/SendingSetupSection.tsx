@@ -17,6 +17,7 @@ const OPTIONS: { id: Option; titleKey: TranslationKey; descriptionKey: Translati
 	{ id: "cloudflare", titleKey: "domains.opt.cfEmail", descriptionKey: "domains.opt.cfSendDesc" },
 	{ id: "resend", titleKey: "domains.providerResend", descriptionKey: "domains.opt.resendSendDesc" },
 	{ id: "ses", titleKey: "domains.providerSes", descriptionKey: "domains.opt.sesSendDesc" },
+	{ id: "brevo", titleKey: "domains.providerBrevo", descriptionKey: "domains.opt.brevoSendDesc" },
 ];
 
 type Props = {
@@ -30,11 +31,12 @@ type Props = {
 	cloudflareOk: boolean;
 };
 
-type PresenceResponse = Partial<Present> & { resendStatus?: string | null; sesVerified?: boolean | null };
+type PresenceResponse = Partial<Present> & { resendStatus?: string | null; sesVerified?: boolean | null; brevoStatus?: string | null };
 
 export default function SendingSetupSection({ domain, onChange, busy, message, cloudflareConfig, cloudflareOk }: Props) {
 	const { t } = useLanguage();
-	const [present, setPresent] = useState<Present>({ cloudflare: null, resend: null, ses: null });
+	const [present, setPresent] = useState<Present>({ cloudflare: null, resend: null, ses: null, brevo: null });
+	const [brevoStatus, setBrevoStatus] = useState<string | null>(null);
 	const [resendStatus, setResendStatus] = useState<string | null>(null);
 	const [sesStatus, setSesStatus] = useState<string | null>(null);
 	const [reload, setReload] = useState(0);
@@ -46,11 +48,12 @@ export default function SendingSetupSection({ domain, onChange, busy, message, c
 		requestJson<PresenceResponse>(`/api/domains/${domain.id}/sending`, "GET")
 			.then((data) => {
 				if (!active) return;
-				setPresent({ cloudflare: data.cloudflare ?? null, resend: data.resend ?? null, ses: data.ses ?? null });
+				setPresent({ cloudflare: data.cloudflare ?? null, resend: data.resend ?? null, ses: data.ses ?? null, brevo: false });
+				setBrevoStatus(data.brevoStatus ?? null);
 				setResendStatus(data.resendStatus ?? null);
 				setSesStatus(data.sesVerified === null || data.sesVerified === undefined ? null : data.sesVerified ? "verified" : "pending");
 			})
-			.catch(() => { if (active) setPresent({ cloudflare: null, resend: null, ses: null }); });
+			.catch(() => { if (active) setPresent({ cloudflare: null, resend: null, ses: null, brevo: null }); });
 		return () => { active = false; };
 	}, [domain.id, domain.sendingProvider, reload]);
 
@@ -70,6 +73,7 @@ export default function SendingSetupSection({ domain, onChange, busy, message, c
 	const okFor = (option: Option): boolean | null =>
 		option === "cloudflare" ? cloudflareOk
 		: option === "resend" ? (resendStatus === null ? null : resendStatus === "verified")
+		: option === "brevo" ? (brevoStatus === null ? null : brevoStatus === "verified")
 		: (sesStatus === null ? null : sesStatus === "verified");
 
 	return (
@@ -90,10 +94,11 @@ export default function SendingSetupSection({ domain, onChange, busy, message, c
 							selected={selected}
 							disabled={busy}
 							onToggle={(on) => onChange?.(on ? option.id : "none")}
-							cleanup={{ present: !!present[option.id], busy: removing === option.id, disabled: removing !== null, onClick: () => void cleanUp(option.id, t(option.titleKey)) }}
+							cleanup={option.id === "brevo" ? undefined : { present: !!present[option.id], busy: removing === option.id, disabled: removing !== null, onClick: () => void cleanUp(option.id, t(option.titleKey)) }}
 						>
 							{option.id === "cloudflare" ? cloudflareConfig
 								: option.id === "resend" ? <ResendDomainSection domainId={domain.id} onStatus={setResendStatus} />
+								: option.id === "brevo" ? <p className="text-xs text-neutral-600">{t(brevoStatus === "verified" ? "brevo.verified" : brevoStatus === "pending" ? "brevo.pending" : brevoStatus === "not_registered" ? "brevo.notRegistered" : brevoStatus === "no_key" ? "brevo.noKey" : "brevo.unknown")}</p>
 								: <SesSendingConfig domainId={domain.id} onStatus={setSesStatus} />}
 						</ProviderCard>
 					);
